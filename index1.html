@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Advanced Lighting Fixture Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body {
+    margin: 0; min-height: 100vh;
+    background: linear-gradient(120deg, #f1f3fa 60%, #c3d0e6 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: start;
+    padding: 2rem 1rem 6rem 1rem;
+    user-select: none;
+    color: #263248;
+  }
+  .card {
+    background: #fff; border-radius: 22px;
+    box-shadow: 0 8px 32px rgba(44, 62, 80, 0.15);
+    max-width: 480px; width: 100%; padding: 2.4rem 1.8rem 2rem 1.8rem;
+    display: flex; flex-direction: column; align-items: center;
+    position: relative;
+    box-sizing: border-box;
+  }
+  .pin {
+    width: 28px; height: 28px;
+    background: #4459b3; border-radius: 50%;
+    position: absolute; top: -15px; left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 2px 12px #afc6e6;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .pin::before {
+    content: '';
+    display: block; width: 10px; height: 10px;
+    background: #fafafd; border-radius: 50%;
+  }
+  h2 {
+    color: #123254; font-size: 2.1rem;
+    margin-bottom: 1.5rem; margin-top: 0;
+    font-weight: 600; letter-spacing: -1px;
+  }
+  label {
+    display: block; margin-bottom: 0.25rem;
+    font-weight: 600; color: #4463aa; font-size: 1rem;
+  }
+  input[type=number], select, input[type=range] {
+    width: 100%; padding: 0.5rem 0.75rem; margin-bottom: 1.15rem;
+    border: 1.4px solid #dde3ed; border-radius: 8px; background: #f6f9fe;
+    font-size: 1rem; color: #263248; outline: none; box-sizing: border-box;
+  }
+  input[type=number]:focus, select:focus, input[type=range]:focus {
+    border-color: #5b6be2;
+  }
+  input[type=range] {
+    -webkit-appearance: none; height: 6px; cursor: pointer; padding: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    width: 100%; height: 6px; background: #ccd5ef; border-radius: 8px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; background: #4459b3;
+    border-radius: 50%; cursor: pointer; margin-top: -8px; transition: background 0.3s;
+  }
+  button {
+    width: 100%; padding: 13px 0; background: linear-gradient(90deg, #5b6be2 60%, #4373ce);
+    color: #fff; border: none; border-radius: 11px; font-size: 1.07rem; font-weight: 600;
+    letter-spacing: 0.4px; margin-top: 1rem; box-shadow: 0 2px 10px #5b6be23b;
+    transition: background 0.18s, transform 0.16s; cursor: pointer;
+  }
+  button:active {
+    background: linear-gradient(90deg, #3d4fb6 60%, #304f83);
+    transform: scale(0.98);
+  }
+  .result {
+    opacity: 0; transform: translateY(18px) scale(0.97);
+    margin-top: 2rem; font-weight: 500; color: #146244;
+    background: #e5f8ee; padding: 1rem; border-radius: 16px; width: 100%;
+    box-shadow: 0 2px 8px #b0e3ce35; transition: opacity 0.6s cubic-bezier(0.6,0.03,0.32,1.18), transform 0.6s, box-shadow 0.4s;
+    display: flex; justify-content: center; align-items: center; text-align: left;
+  }
+  .result.show {
+    opacity: 1; transform: translateY(0) scale(1);
+    box-shadow: 0 4px 30px #a7e0c8ad;
+  }
+  table.result-table {
+    width: 100%; border-collapse: collapse;
+  }
+  table.result-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #ccc;
+    vertical-align: top;
+  }
+  table.result-table td.index {
+    width: 26px;
+    color: #556080;
+    font-weight: 700;
+  }
+  table.result-table td.label {
+    font-weight: 600;
+    padding-right: 8px;
+    white-space: nowrap;
+  }
+  table.result-table td.value {
+    word-break: break-word;
+  }
+  .plan {
+    display: flex; justify-content: center; align-items: center; margin-top: 2rem; width: 100%; max-width: 480px; flex-wrap: wrap; gap: 1rem; padding: 0 1rem;
+  }
+  .room-diagram {
+    border: 2.5px solid #ccd5ef; background: #fafdff; border-radius: 10px; position: relative; width: 90%; height: 220px; min-width: 250px; box-sizing: border-box;
+    overflow: hidden; touch-action: none;
+  }
+  .fixture-dot {
+    position: absolute; width: 24px; height: 24px; background: #476be5; border: 2.5px solid #fafafd; border-radius: 50%;
+    cursor: grab; box-shadow: 0 0 14px #b3cafc99; transition: box-shadow 0.24s ease, transform 0.15s ease;
+    animation: pulse 2.5s infinite ease-in-out; z-index: 2;
+  }
+  .fixture-dot:active { cursor: grabbing; transform: scale(1.15); box-shadow: 0 0 26px #314bc0bb; }
+  .fixture-dot:hover { box-shadow: 0 0 24px #2c54dccc, 0 0 0 6px #e4eaff55; transform: scale(1.1); }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 14px #b3cafc99; }
+    50% { box-shadow: 0 0 24px #2c54dccc, 0 0 0 6px #e4eaff55; }
+  }
+  .coverage-circle {
+    position: absolute; border-radius: 50%; background: rgba(71, 107, 229, 0.16); pointer-events: none; transition: all 0.3s ease; z-index:1;
+    transform: translate(-50%, -50%);
+  }
+  .beam-label {
+    position: absolute; left: 50%; top: -22px; transform: translateX(-50%);
+    font-size: 0.95rem; font-weight: 700; color: #233a69; letter-spacing: 0.5px; text-align: center; white-space: nowrap;
+  }
+  .designer-badge {
+    position: fixed; bottom: 18px; right: 28px;
+    background: linear-gradient(90deg, #e5ecea 60%, #f9fcfc 100%);
+    color: #4459b3; font-family: 'Segoe UI', sans-serif; font-size: 1.01rem; letter-spacing: 0.5px;
+    border-radius: 18px 7px 24px 7px; box-shadow: 0 2px 10px #b1e7cf41;
+    padding: 0.5rem 1.8rem; z-index: 100; font-weight: 500; opacity: 0.95;
+  }
+  @media(max-width:530px){
+    .card { max-width: 97vw; padding:20px 3vw; }
+    h2 { font-size: 1.25rem; }
+    .room-diagram { width:96vw; height:54vw; }
+  }
+</style>
+</head>
+<body>
+<div class="card" role="main">
+  <div class="pin" aria-hidden="true"></div>
+  <h2>Lighting Fixture Calculator</h2>
+  
+  <label for="area-type">Room Area Type</label>
+  <select id="area-type">
+    <option value="living-room" selected>Living Room</option>
+    <option value="bedroom">Bedroom</option>
+    <option value="office">Office</option>
+    <option value="kitchen">Kitchen</option>
+    <option value="bathroom">Bathroom</option>
+  </select>
+
+  <label for="length">Room Length (feet)</label>
+  <input id="length" type="number" min="1" step="0.1" placeholder="Enter length in ft" />
+  
+  <label for="width">Room Width (feet)</label>
+  <input id="width" type="number" min="1" step="0.1" placeholder="Enter width in ft" />
+  
+  <label for="ceiling-height">Ceiling Height (feet)</label>
+  <input id="ceiling-height" type="number" min="6" max="25" step="0.1" value="9" />
+  
+  <label for="reflectance">Reflectance (Walls/Floor)</label>
+  <input type="range" id="reflectance" min="0.5" max="1.5" step="0.05" value="1" />
+  <div style="text-align:right; margin-top: -1rem; margin-bottom: 1rem;">
+    Reflectance: <b id="reflectance-value">1.00</b>
+  </div>
+
+  <label for="fixture-type">Fixture Type</label>
+  <select id="fixture-type">
+    <option value="downlight">Downlight</option>
+    <option value="cob">COB Light</option>
+    <option value="panel">Panel Light</option>
+    <option value="spot">Spot Light</option>
+    <option value="surface">Surface Light</option>
+    <option value="batten">Batten Light</option>
+  </select>
+
+  <label for="beam-angle">Beam Angle</label>
+  <select id="beam-angle">
+    <option value="30">30° (Narrow)</option>
+    <option value="60">60° (Medium)</option>
+    <option value="90" selected>90° (Wide)</option>
+    <option value="120">120° (Very Wide)</option>
+  </select>
+  
+  <label for="wattage">Fixture Wattage</label>
+  <select id="wattage">
+    <option value="8">8W</option>
+    <option value="12" selected>12W</option>
+    <option value="18">18W</option>
+    <option value="24">24W</option>
+    <option value="40">40W</option>
+  </select>
+
+  <label for="daily-hours">Daily Usage (hours)</label>
+  <input type="number" id="daily-hours" min="0" max="24" step="0.1" value="6" />
+
+  <label for="electricity-rate">Electricity Rate (₹ / kWh)</label>
+  <input type="number" id="electricity-rate" min="0" step="0.01" value="8.00" />
+
+  <button onclick="calculate()">Calculate</button>
+
+  <div id="result" class="result" aria-live="polite"></div>
+  <div class="plan" id="plan" aria-label="Room layout, fixture positions"></div>
+</div>
+
+<div class="designer-badge">Designed by Bhavesh Laddha</div>
+
+<script>
+const FT_TO_M = 0.3048;
+const reflectanceInput = document.getElementById('reflectance');
+const reflectanceDisplay = document.getElementById('reflectance-value');
+reflectanceInput.addEventListener('input', () => { reflectanceDisplay.textContent = parseFloat(reflectanceInput.value).toFixed(2); });
+
+let dragTarget = null, offset = { x:0, y:0 };
+document.addEventListener('pointerup', () => { dragTarget = null; });
+document.addEventListener('pointermove', e => {
+  if (!dragTarget) return;
+  e.preventDefault();
+  const parentRect = dragTarget.parentElement.getBoundingClientRect();
+  let x = e.clientX - parentRect.left - offset.x;
+  let y = e.clientY - parentRect.top - offset.y;
+  x = Math.min(Math.max(x, 0), parentRect.width);
+  y = Math.min(Math.max(y, 0), parentRect.height);
+  dragTarget.style.left = x + 'px';
+  dragTarget.style.top = y + 'px';
+  const circle = document.getElementById(dragTarget.dataset.circleId);
+  if (circle) {
+    circle.style.left = x + 'px';
+    circle.style.top = y + 'px';
+  }
+});
+
+function makeDraggable(d) {
+  d.addEventListener('pointerdown', e => {
+    dragTarget = d;
+    offset.x = e.clientX - (parseFloat(d.style.left) || 0);
+    offset.y = e.clientY - (parseFloat(d.style.top) || 0);
+    e.preventDefault();
+  });
+}
+
+function calculate() {
+  const areaType = document.getElementById('area-type').value;
+  const lenFt = parseFloat(document.getElementById('length').value);
+  const widFt = parseFloat(document.getElementById('width').value);
+  const ceilingFt = parseFloat(document.getElementById('ceiling-height').value) || 9;
+  const reflectance = parseFloat(document.getElementById('reflectance').value) || 1;
+  const beamAngle = parseInt(document.getElementById('beam-angle').value);
+  const wattage = parseInt(document.getElementById('wattage').value);
+  const fixtureType = document.getElementById('fixture-type').options[document.getElementById('fixture-type').selectedIndex].text;
+  const dailyHours = parseFloat(document.getElementById('daily-hours').value);
+  const elecRate = parseFloat(document.getElementById('electricity-rate').value);
+
+  const resultDiv = document.getElementById('result');
+  const planDiv = document.getElementById('plan');
+  resultDiv.classList.remove('show');
+  planDiv.innerHTML = '';
+
+  if (isNaN(lenFt) || lenFt <= 0 || isNaN(widFt) || widFt <= 0) {
+    resultDiv.innerHTML = 'Please enter valid room length and width.';
+    setTimeout(() => { resultDiv.classList.add('show'); }, 60);
+    return;
+  }
+
+  // Lux values based on room type
+  const luxLevels = {
+    'living-room': 300,
+    'bedroom': 200,
+    'office': 400,
+    'kitchen': 400,
+    'bathroom': 200,
+  };
+  const requiredLux = luxLevels[areaType];
+
+  // Convert feet to square meters
+  const area_m2 = (lenFt * FT_TO_M) * (widFt * FT_TO_M);
+  const totalLumens = requiredLux * area_m2;
+
+  const lumensPerWatt = 80;
+  const lumensPerFixture = wattage * lumensPerWatt * reflectance;
+
+  // Coverage area with beam angle & ceiling height
+  const height = ceilingFt * FT_TO_M;
+  const rad = Math.tan((beamAngle * Math.PI) / 180 / 2) * height;
+  const coverageArea = Math.PI * rad * rad;
+
+  // Calculate fixture counts
+  const fixturesByLumens = Math.ceil(totalLumens / lumensPerFixture);
+  const fixturesByCoverage = Math.ceil(area_m2 / (coverageArea * 0.65));
+  const totalFixtures = Math.max(fixturesByLumens, fixturesByCoverage);
+
+  const diagramW = planDiv.clientWidth * 0.9 || 300;
+  const diagramH = 220;
+
+  // Find grid layout factors
+  function factors(n) {
+    let best = [1, n];
+    for (let i = 1; i <= Math.sqrt(n); i++) {
+      if (n % i === 0) best = [i, n / i];
+    }
+    return best;
+  }
+  let [rows, cols] = factors(totalFixtures);
+  if (totalFixtures <= 2) { cols = totalFixtures; rows = 1; }
+  if (totalFixtures == 3) { cols = 2; rows = 2; }
+
+  // Build fixture dots and coverage circles HTML
+  let dotsHTML = '', circlesHTML = '';
+  const beamDiameterPx = Math.max(rad * 2 * ((diagramW / lenFt + diagramH / widFt) / 2) * 1.15, 20);
+
+  let fixtureIndex = 1;
+  for (let r = 1; r <= rows; r++) {
+    for (let c = 1; c <= cols; c++) {
+      if (fixtureIndex > totalFixtures) break;
+      const left = (c / (cols + 1)) * diagramW;
+      const top = (r / (rows + 1)) * diagramH;
+      const circleId = `circle${fixtureIndex}`;
+      dotsHTML += `<div tabindex="0" class="fixture-dot" style="left:${left}px;top:${top}px;" data-circle-id="${circleId}" aria-label="Fixture ${fixtureIndex}"></div>`;
+      circlesHTML += `<div class="coverage-circle" style="left:${left}px;top:${top}px;width:${beamDiameterPx}px;height:${beamDiameterPx}px;" id="${circleId}"></div>`;
+      fixtureIndex++;
+    }
+  }
+  planDiv.innerHTML = `<div class="room-diagram">
+    <div class="beam-label" aria-label="Room properties">${lenFt.toFixed(1)}ft × ${widFt.toFixed(1)}ft | Ceiling: ${ceilingFt.toFixed(1)}ft | Reflectance: ${reflectance.toFixed(2)}</div>
+    ${circlesHTML}
+    ${dotsHTML}
+  </div>`;
+  planDiv.querySelectorAll('.fixture-dot').forEach(makeDraggable);
+
+  // Calculate energy and cost
+  const totalWatt = totalFixtures * wattage;
+  const dailyEnergy = (totalWatt / 1000) * dailyHours;
+  const monthlyCost = dailyEnergy * 30 * elecRate;
+
+  // Build results table HTML
+  const resultHTML = `
+    <table class="result-table" aria-label="Calculation results">
+      <tr><td class="index">1.</td><td class="label">Room Type</td><td class="value">${areaType.replace('-', ' ')}</td></tr>
+      <tr><td class="index">2.</td><td class="label">Room Dimensions</td><td class="value">${lenFt.toFixed(1)} ft × ${widFt.toFixed(1)} ft</td></tr>
+      <tr><td class="index">3.</td><td class="label">Ceiling Height</td><td class="value">${ceilingFt.toFixed(1)} ft</td></tr>
+      <tr><td class="index">4.</td><td class="label">Reflectance Factor</td><td class="value">${reflectance.toFixed(2)}</td></tr>
+      <tr><td class="index">5.</td><td class="label">Beam Angle</td><td class="value">${beamAngle}°</td></tr>
+      <tr><td class="index">6.</td><td class="label">Fixture Type</td><td class="value">${fixtureType}</td></tr>
+      <tr><td class="index">7.</td><td class="label">Fixture Wattage</td><td class="value">${wattage} W</td></tr>
+      <tr><td class="index">8.</td><td class="label">Required Fixture Count</td><td class="value"><b>${totalFixtures}</b></td></tr>
+      <tr><td class="index">9.</td><td class="label">Estimated Daily Energy Use</td><td class="value">${dailyEnergy.toFixed(2)} kWh</td></tr>
+      <tr><td class="index">10.</td><td class="label">Estimated Monthly Electricity Cost</td><td class="value">₹${monthlyCost.toFixed(2)}</td></tr>
+    </table>`;
+
+  resultDiv.innerHTML = resultHTML;
+  setTimeout(() => { resultDiv.classList.add('show'); }, 60);
+}
+</script>
+</body>
+</html>
